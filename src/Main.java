@@ -74,6 +74,8 @@ class Terminal {
             case "echo":
                 if (args.length == 1) {
                     echo(args[0]);
+                } else if (args.length > 1 && args[0].startsWith("\"") && args[args.length - 1].endsWith("\"")) {
+                    echo(String.join(" ", args).replace("\"", "")); // Join the arguments into a single string and remove the quotes
                 } else {
                     System.out.println("Usage: echo <message>");
                 }
@@ -90,7 +92,11 @@ class Terminal {
             case "cd":
                 if (args.length == 1) {
                     cd(args[0]);
-                } else {
+                }
+                else if (args.length == 0){
+                    cd(""); // home directory
+                }
+                else {
                     System.out.println("Usage: cd <directory>");
                 }
                 break;
@@ -210,10 +216,25 @@ class Terminal {
 
     public void cd(String directory) {
         try {
-            Path newPath = Paths.get(directory);
-            Files.createDirectories(newPath);
-            System.setProperty("user.dir", newPath.toAbsolutePath().toString());
-        } catch (IOException e) {
+            if (directory.equals("..")) { // parent directory
+                String currentDirectory = System.getProperty("user.dir");
+                String parentDirectory = Paths.get(currentDirectory).getParent().toString();
+                System.setProperty("user.dir", parentDirectory);
+            }
+            else if (directory.equals("")) { // home directory
+                System.setProperty("user.dir", System.getProperty("user.home"));
+            }
+            // absolute path
+            else if (Files.exists(Paths.get(directory.replace("\"", "")))){
+                System.setProperty("user.dir", directory.replace("\"", ""));
+            }
+            // relative path
+            else if (Files.exists(Paths.get(System.getProperty("user.dir") + "\\" + directory.replace("\"", "")))) {
+                System.setProperty("user.dir", System.getProperty("user.dir") + "\\" + directory.replace("\"", ""));
+            } else {
+                System.out.println("Directory does not exist");
+            }
+        } catch (Exception e) {
             System.out.println("Error changing directory: " + e.getMessage());
         }
     }
