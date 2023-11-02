@@ -279,33 +279,46 @@ class Terminal {
     }
 
     private void rmdirAll(String directory) {
-        File dir = new File(directory);
-        File[] files = dir.listFiles();
-        if (files != null) {
-            for (File file : files) {
-                if (file.isDirectory()) {
-                    rmdirAll(file.getPath());
-                }
-                file.delete();
-            }
+        // remove each empty directory in the given directory using rmdir
+        try {
+            Files.list(Paths.get(directory))
+                    .forEach(path -> {
+                        if (Files.isDirectory(path)) {
+                            rmdir(path.toString());
+                        }
+                    });
+        } catch (IOException e) {
+            System.out.println("Error deleting directory: " + e.getMessage());
         }
-        dir.delete();
     }
 
     public void rmdir(String directory) {
-        String currentDirectory = System.getProperty("user.dir");
-        String dirToRemove = currentDirectory + File.separator + directory;
-        File dir = new File(dirToRemove);
-
-        if (dir.exists() && dir.isDirectory()) {
-            if (dir.list().length == 0) {
-                dir.delete();
-                System.out.println("Directory removed: " + dir.getAbsolutePath());
+        // remove the given directory if it is empty
+        try {
+            // check if it is abslute or relative path
+            if (Files.exists(Paths.get(directory.replace("\"", "")))) {
+                if (Files.isDirectory(Paths.get(directory.replace("\"", "")))) {
+                    if (Files.list(Paths.get(directory.replace("\"", ""))).count() == 0) {
+                        Files.delete(Paths.get(directory.replace("\"", "")));
+                        System.out.println("Directory deleted: " + directory);
+                    } else {
+                        System.out.println("Directory is not empty");
+                    }
+                }
+            } else if (Files.exists(Paths.get(System.getProperty("user.dir") + "\\" + directory.replace("\"", "")))) {
+                if (Files.isDirectory(Paths.get(System.getProperty("user.dir") + "\\" + directory.replace("\"", "")))) {
+                    if (Files.list(Paths.get(System.getProperty("user.dir") + "\\" + directory.replace("\"", ""))).count() == 0) {
+                        Files.delete(Paths.get(System.getProperty("user.dir") + "\\" + directory.replace("\"", "")));
+                        System.out.println("Directory deleted: " + directory);
+                    } else {
+                        System.out.println("Directory is not empty");
+                    }
+                }
             } else {
-                System.out.println("Directory is not empty: " + dir.getAbsolutePath());
+                System.out.println("Directory does not exist");
             }
-        } else {
-            System.out.println("Directory not found: " + dir.getAbsolutePath());
+        } catch (IOException e) {
+            System.out.println("Error deleting directory: " + e.getMessage());
         }
     }
     public void touch(String filePath) {
